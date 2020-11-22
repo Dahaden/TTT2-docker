@@ -1,0 +1,1 @@
+docker build -t ttt2-docker .

@@ -1,0 +1,1 @@
+docker exec -it gmod-dedicated sh

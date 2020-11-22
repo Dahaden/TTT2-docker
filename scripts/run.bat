@@ -1,0 +1,2 @@
+docker container rm gmod-dedicated
+docker run -d --net=host -v ./gmod-data:/home/steam/gmod-dedicated --name=gmod-dedicated -e SRCDS_TOKEN=652B0A7FD7E3956379E10B5965BD4BC5 -e SRCDS_WORKSHOP_AUTHKEY=42F383A231863D0A46ACAAB5C4BD0E10 ttt2-docker
