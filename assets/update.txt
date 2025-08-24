@@ -1,0 +1,11 @@
+@ShutdownOnFailedCommand 0
+@NoPromptForPassword 1
+
+login anonymous
+force_install_dir /home/gmod/server
+app_update 4020 -beta x86-64 validate
+
+force_install_dir /home/gmod/mounts
+app_update 232330 validate
+app_update 232250 validate
+quit

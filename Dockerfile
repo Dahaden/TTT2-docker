@@ -1,69 +1,70 @@
-FROM cm2network/steamcmd:root
+# BASE IMAGE
+FROM ubuntu:questing
 
-LABEL maintainer="dahaden@gmail.com"
+LABEL maintainer="dahaden"
+LABEL description="A structured Garry's Mod dedicated server under a ubuntu linux image"
 
-ENV STEAMAPP garrysmod
-ENV STEAMAPPID 4020
-ENV STEAMAPPDIR "${HOMEDIR}/${STEAMAPP}-dedicated"
-ENV DLURL https://raw.githubusercontent.com/CM2Walki/CSGO
+# INSTALL NECESSARY PACKAGES
+RUN apt-get update && apt-get -y --no-install-recommends --no-install-suggests install \
+    wget lib32gcc-s1 lib32stdc++6 ca-certificates screen tar bzip2 gzip unzip gdb
 
-# Create autoupdate config
-# Add entry script & ESL config
-# Remove packages and tidy up
-RUN set -x \
-	&& apt-get update \
-	&& apt-get install -y --no-install-recommends --no-install-suggests \
-		wget=1.20.1-1.1 \
-		ca-certificates=20190110 \
-	&& mkdir -p "${STEAMAPPDIR}" \
-	&& wget --max-redirect=30 "${DLURL}/master/etc/entry.sh" -O "${HOMEDIR}/entry.sh" \
-	&& { \
-		echo '@ShutdownOnFailedCommand 1'; \
-		echo '@NoPromptForPassword 1'; \
-		echo 'login anonymous'; \
-		echo 'force_install_dir '"${STEAMAPPDIR}"''; \
-		echo 'app_update '"${STEAMAPPID}"''; \
-		echo 'quit'; \
-	   } > "${HOMEDIR}/${STEAMAPP}_update.txt" \
-	&& chmod +x "${HOMEDIR}/entry.sh" \
-	&& chown -R "${USER}:${USER}" "${HOMEDIR}/entry.sh" "${STEAMAPPDIR}" "${HOMEDIR}/${STEAMAPP}_update.txt" \	
-	&& rm -rf /var/lib/apt/lists/*
+# Original
+# RUN apt-get update && apt-get -y --no-install-recommends --no-install-suggests install \
+#     wget lib32ncurses5 lib32gcc1 lib32stdc++6 lib32tinfo5 ca-certificates screen tar bzip2 gzip unzip gdb
 
-ENV SRCDS_FPSMAX=300 \
-	SRCDS_TICKRATE=128 \
-	SRCDS_PORT=27015 \
-	SRCDS_TV_PORT=27020 \
-	SRCDS_CLIENT_PORT=27005 \
-	SRCDS_NET_PUBLIC_ADDRESS="0" \
-	SRCDS_IP="0" \
-	SRCDS_MAXPLAYERS=14 \
-	SRCDS_TOKEN=0 \
-	SRCDS_RCONPW="hi" \
-	SRCDS_PW="hi" \
-	SRCDS_STARTMAP="de_office" \
-	SRCDS_REGION=3 \
-	SRCDS_MAPGROUP="mg_active" \
-	SRCDS_GAMETYPE=0 \
-	SRCDS_GAMEMODE="terrortown" \
-	SRCDS_HOSTNAME="Fjjfjfj TTT2 \"${STEAMAPP}\" Server" \
-	SRCDS_WORKSHOP_START_MAP=0 \
-	SRCDS_HOST_WORKSHOP_COLLECTION=2049175788 \
-	SRCDS_WORKSHOP_AUTHKEY="" \
-	ADDITIONAL_ARGS=""
+# CLEAN UP
+RUN apt-get clean
+RUN rm -rf /tmp/* /var/lib/apt/lists/*
 
-USER ${USER}
+# SET STEAM USER
+RUN useradd -d /home/gmod -m steam
+USER steam
+RUN mkdir /home/gmod/server && mkdir /home/gmod/steamcmd
 
-VOLUME ${STEAMAPPDIR}
+# INSTALL STEAMCMD
+RUN wget -P /home/gmod/steamcmd/ https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz \
+    && tar -xvzf /home/gmod/steamcmd/steamcmd_linux.tar.gz -C /home/gmod/steamcmd \
+    && rm -rf /home/gmod/steamcmd/steamcmd_linux.tar.gz
 
-WORKDIR ${HOMEDIR}
-# WORKDIR ${STEAMAPPDIR}
+# SETUP STEAMCMD update txt
+COPY assets/update.txt /home/gmod/update.txt
 
-CMD ["bash", "entry.sh"]
-# CMD ["/bin/sh"]
+# SETUP BINARIES FOR x32 and x64 bits
+RUN mkdir -p /home/gmod/.steam/sdk32 \
+    && cp -v /home/gmod/steamcmd/linux32/steamclient.so /home/gmod/.steam/sdk32/steamclient.so \
+    && mkdir -p /home/gmod/.steam/sdk64 \
+    && cp -v /home/gmod/steamcmd/linux64/steamclient.so /home/gmod/.steam/sdk64/steamclient.so
 
-# Expose ports
-EXPOSE 27005/udp \
-	27005/tcp \
-	27015/tcp \
-	27015/udp \
-	27020/udp
+# CREATE DATABASE FILE
+RUN touch /home/gmod/server/garrysmod/sv.db
+
+# CREATE CACHE FOLDERS
+RUN mkdir -p /home/gmod/server/steam_cache/content && mkdir -p /home/gmod/server/garrysmod/cache/srcds
+
+# PORT FORWARDING
+# https://developer.valvesoftware.com/wiki/Source_Dedicated_Server#Connectivity
+EXPOSE 27015
+EXPOSE 27015/udp
+EXPOSE 27005/udp
+
+# SET ENVIRONMENT VARIABLES
+ENV MAXPLAYERS="16"
+ENV GAMEMODE="sandbox"
+ENV MAP="gm_construct"
+ENV PORT="27015"
+
+# SET GMOD MOUNT CONTENT
+VOLUME /home/gmod/server/garrysmod/cfg
+
+# ADD START SCRIPT
+COPY --chown=steam:steam assets/start.sh /home/gmod/start.sh
+RUN chmod +x /home/gmod/start.sh
+
+# CREATE HEALTH CHECK
+COPY --chown=steam:steam assets/health.sh /home/gmod/health.sh
+RUN chmod +x /home/gmod/health.sh
+HEALTHCHECK --start-period=10s \
+    CMD /home/gmod/health.sh
+
+# START THE SERVER
+CMD ["/home/gmod/start.sh"]
