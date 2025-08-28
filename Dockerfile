@@ -6,7 +6,7 @@ LABEL description="A structured Garry's Mod dedicated server under a ubuntu linu
 
 # INSTALL NECESSARY PACKAGES
 RUN apt-get update && apt-get -y --no-install-recommends --no-install-suggests install \
-    wget lib32gcc-s1 lib32stdc++6 ca-certificates screen tar bzip2 gzip unzip gdb
+    wget lib32gcc-s1 lib32stdc++6 ca-certificates screen tar bzip2 gzip unzip gdb iproute2
 
 # Original
 # RUN apt-get update && apt-get -y --no-install-recommends --no-install-suggests install \
@@ -27,7 +27,9 @@ RUN wget -P /home/gmod/steamcmd/ https://steamcdn-a.akamaihd.net/client/installe
     && rm -rf /home/gmod/steamcmd/steamcmd_linux.tar.gz
 
 # SETUP STEAMCMD update txt
-COPY assets/update.txt /home/gmod/update.txt
+# COPY assets/update.txt /home/gmod/update.txt
+RUN wget -P /home/gmod https://raw.githubusercontent.com/Dahaden/ttt2-docker/refs/heads/main/assets/update.txt
+RUN /home/gmod/steamcmd/steamcmd.sh +runscript /home/gmod/update.txt +quit
 
 # SETUP BINARIES FOR x32 and x64 bits
 RUN mkdir -p /home/gmod/.steam/sdk32 \
@@ -57,12 +59,15 @@ ENV PORT="27015"
 VOLUME /home/gmod/server/garrysmod/cfg
 
 # ADD START SCRIPT
-COPY --chown=steam:steam assets/start.sh /home/gmod/start.sh
+# COPY --chown=steam:steam assets/start.sh /home/gmod/start.sh
+RUN wget -P /home/gmod https://raw.githubusercontent.com/Dahaden/ttt2-docker/refs/heads/main/assets/start.sh
 RUN chmod +x /home/gmod/start.sh
 
 # CREATE HEALTH CHECK
-COPY --chown=steam:steam assets/health.sh /home/gmod/health.sh
+# COPY --chown=steam:steam assets/health.sh /home/gmod/health.sh
+RUN wget -P /home/gmod https://raw.githubusercontent.com/Dahaden/ttt2-docker/refs/heads/main/assets/health.sh
 RUN chmod +x /home/gmod/health.sh
+
 HEALTHCHECK --start-period=10s \
     CMD /home/gmod/health.sh
 

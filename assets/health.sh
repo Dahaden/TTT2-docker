@@ -1,4 +1,4 @@
-if ! [ "$(netstat -l | grep "${PORT}.*LISTEN")" ];
+if ! [ "$(ss -l | grep "LISTEN.*${PORT}")" ];
 then
     exit 1
 fi
