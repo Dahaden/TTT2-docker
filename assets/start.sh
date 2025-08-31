@@ -27,8 +27,9 @@ fi
 # Probably should use a file or something for this?
 if [ "${FIRST_START}" = "true" ]; then
     # SETUP CSS & TF2 CONTENT
-    /home/gmod/steamcmd/steamcmd.sh +login anonymous \
+    /home/gmod/steamcmd/steamcmd.sh \
         +force_install_dir /home/gmod/mounts \
+        +login anonymous \
         +app_update 232330 validate \
         +app_update 232250 validate \
         +quit

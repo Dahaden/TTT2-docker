@@ -1,5 +1,8 @@
 # Dockerised TTT2 for Garrys mod
 
+Heavily based off of https://github.com/ceifa/garrysmod-docker/tree/master
+But applying suggestions for https://docs.ttt2.neoxult.de/server-owners/manual-install/#prerequisites
+
 ## Prerequisits
 
 ### Machine
